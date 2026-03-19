@@ -147,4 +147,18 @@ CREATE TABLE IF NOT EXISTS feedback (
 );
 
 -- Note: In a real system you'd probably link feedback to `user_id` or a specific `menu_id`. 
--- Since we do not have an authentication table, this is anonymous system-wide feedback.
+
+-- Create an enum type for user roles
+DROP TYPE IF EXISTS role_enum CASCADE;
+
+CREATE TYPE role_enum AS ENUM ('admin', 'contributer', 'reader');
+
+-- Table to store users
+CREATE TABLE IF NOT EXISTS users (
+    user_id SERIAL PRIMARY KEY,
+    firebase_uid VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255),
+    role role_enum NOT NULL DEFAULT 'reader',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

@@ -10,6 +10,11 @@ class MealTypeEnum(enum.Enum):
     Lunch = 'Lunch'
     Dinner = 'Dinner'
 
+class RoleEnum(enum.Enum):
+    admin = 'admin'
+    contributer = 'contributer'
+    reader = 'reader'
+
 class DayOfWeekEnum(enum.Enum):
     Monday = 'Monday'
     Tuesday = 'Tuesday'
@@ -51,4 +56,14 @@ class Feedback(Base):
     feedback_id = Column(Integer, primary_key=True, index=True)
     rating = Column(Integer, nullable=False)
     comment = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class User(Base):
+    __tablename__ = "users"
+
+    user_id = Column(Integer, primary_key=True, index=True)
+    firebase_uid = Column(String(255), unique=True, index=True, nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    name = Column(String(255), nullable=True)
+    role = Column(SQLAlchemyEnum(RoleEnum, name="role_enum", create_type=False), nullable=False, default=RoleEnum.reader)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

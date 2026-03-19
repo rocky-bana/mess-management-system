@@ -3,6 +3,11 @@ from enum import Enum
 from typing import Optional, List
 from datetime import datetime
 
+class RoleEnum(str, Enum):
+    admin = 'admin'
+    contributer = 'contributer'
+    reader = 'reader'
+
 class MealType(str, Enum):
     Breakfast = 'Breakfast'
     Lunch = 'Lunch'
@@ -77,6 +82,31 @@ class FeedbackCreate(FeedbackBase):
 
 class Feedback(FeedbackBase):
     feedback_id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+# --- Users ---
+
+class UserBase(BaseModel):
+    name: Optional[str] = None
+
+class UserCreate(UserBase):
+    firebase_uid: str
+    email: str
+    role: Optional[RoleEnum] = RoleEnum.reader
+
+class UserUpdateProfile(BaseModel):
+    name: str
+
+class UserUpdateRole(BaseModel):
+    role: RoleEnum
+
+class User(UserBase):
+    user_id: int
+    firebase_uid: str
+    email: str
+    role: RoleEnum
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

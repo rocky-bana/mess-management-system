@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import type { MenuItem } from './MenuItemsList';
 import { 
   Box, Typography, Card, CardContent, CircularProgress, Alert, Button, 
@@ -27,6 +28,7 @@ interface CalendarDay {
 }
 
 export function CalendarView() {
+  const { dbUser } = useAuth();
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,16 +147,18 @@ export function CalendarView() {
           <Typography variant="h4" fontWeight="bold">Menu Calendar</Typography>
           <Typography color="text.secondary">Select a date to view the scheduled meals</Typography>
         </Box>
-        <Button 
-          variant={showAddForm ? "outlined" : "contained"} 
-          color={showAddForm ? "error" : "primary"}
-          startIcon={showAddForm ? undefined : <AddIcon />}
-          onClick={() => setShowAddForm(!showAddForm)}
-          size="large"
-          sx={{ fontWeight: 'bold' }}
-        >
-          {showAddForm ? 'Cancel Form' : 'Schedule New Meal'}
-        </Button>
+        {dbUser?.role === 'contributer' && (
+          <Button 
+            variant={showAddForm ? "outlined" : "contained"} 
+            color={showAddForm ? "error" : "primary"}
+            startIcon={showAddForm ? undefined : <AddIcon />}
+            onClick={() => setShowAddForm(!showAddForm)}
+            size="large"
+            sx={{ fontWeight: 'bold' }}
+          >
+            {showAddForm ? 'Cancel Form' : 'Schedule New Meal'}
+          </Button>
+        )}
       </Box>
 
       {showAddForm && (
@@ -211,7 +215,7 @@ export function CalendarView() {
 
       <Grid container spacing={4}>
          {/* LEFT PANE: Calendar Date Picker */}
-         <Grid item xs={12} md={5} lg={4}>
+         <Grid size={{ xs: 12, md: 5, lg: 4 }}>
            <Card elevation={2} sx={{ position: 'sticky', top: 20 }}>
              <LocalizationProvider dateAdapter={AdapterDayjs}>
                <DateCalendar 
@@ -224,7 +228,7 @@ export function CalendarView() {
          </Grid>
 
          {/* RIGHT PANE: Selected Date Meal Details */}
-         <Grid item xs={12} md={7} lg={8}>
+         <Grid size={{ xs: 12, md: 7, lg: 8 }}>
             <Card elevation={0} sx={{ border: '1px solid #e0e0e0' }}>
               <Box sx={{ 
                 bgcolor: (displayDayName === 'Saturday' || displayDayName === 'Sunday') ? '#1e293b' : '#1976d2', 
@@ -255,15 +259,15 @@ export function CalendarView() {
                         const mealsForType = selectedDayData.meals.filter(m => m.meal_type === mealType);
                         
                         return (
-                          <Grid item xs={12} key={mealType} sx={{ borderBottom: index < 2 ? '1px solid #e0e0e0' : 'none', p: 3 }}>
-                            <Typography variant="h6" fontWeight="bold" color="text.secondary" gutterBottom sx={{ borderBottom: '2px solid', borderColor: mealType === 'Breakfast' ? '#f59e0b' : mealType === 'Lunch' ? '#10b981' : '#3b82f6', display: 'inline-block', pb: 0.5, mb: 3 }}>
-                              {mealType}
-                            </Typography>
-                            
-                            {mealsForType.length > 0 ? (
-                              <Grid container spacing={2}>
-                                {mealsForType.map((meal) => (
-                                  <Grid item xs={12} sm={6} md={6} lg={6} key={meal.menu_id}>
+                           <Grid size={{ xs: 12 }} key={mealType} sx={{ borderBottom: index < 2 ? '1px solid #e0e0e0' : 'none', p: 3 }}>
+                             <Typography variant="h6" fontWeight="bold" color="text.secondary" gutterBottom sx={{ borderBottom: '2px solid', borderColor: mealType === 'Breakfast' ? '#f59e0b' : mealType === 'Lunch' ? '#10b981' : '#3b82f6', display: 'inline-block', pb: 0.5, mb: 3 }}>
+                               {mealType}
+                             </Typography>
+                             
+                             {mealsForType.length > 0 ? (
+                               <Grid container spacing={2}>
+                                 {mealsForType.map((meal) => (
+                                   <Grid size={{ xs: 12, sm: 6, md: 6, lg: 6 }} key={meal.menu_id}>
                                     <Paper elevation={0} sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: 2, position: 'relative', '&:hover .delete-btn': { opacity: 1 }, transition: '0.2s', '&:hover': { borderColor: '#cbd5e1', bgcolor: '#f8fafc' }, height: '100%', display: 'flex', flexDirection: 'column' }}>
                                       <Box sx={{ flexGrow: 1 }}>
                                         <Typography variant="h6" fontWeight="bold" sx={{ pr: 3, color: '#1e293b' }}>{meal.menu_item.name}</Typography>
@@ -291,15 +295,17 @@ export function CalendarView() {
                                         )}
                                       </Box>
 
-                                      <IconButton 
-                                        className="delete-btn"
-                                        size="small" 
-                                        color="error" 
-                                        sx={{ position: 'absolute', top: 8, right: 8, opacity: 0, transition: 'opacity 0.2s', bgcolor: 'rgba(254, 226, 226, 0.5)', '&:hover': { bgcolor: '#fecaca' } }}
-                                        onClick={() => handleDelete(meal.menu_id)}
-                                      >
-                                        <DeleteIcon fontSize="small" />
-                                      </IconButton>
+                                      {dbUser?.role === 'contributer' && (
+                                        <IconButton 
+                                          className="delete-btn"
+                                          size="small" 
+                                          color="error" 
+                                          sx={{ position: 'absolute', top: 8, right: 8, opacity: 0, transition: 'opacity 0.2s', bgcolor: 'rgba(254, 226, 226, 0.5)', '&:hover': { bgcolor: '#fecaca' } }}
+                                          onClick={() => handleDelete(meal.menu_id)}
+                                        >
+                                          <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                      )}
                                     </Paper>
                                   </Grid>
                                 ))}

@@ -6,12 +6,15 @@ import {
   signOut
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
+import type { DBUser } from '../types/user';
 
 interface AuthContextType {
   currentUser: User | null;
+  dbUser: DBUser | null;
   loading: boolean;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  fetchDBUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,15 +29,47 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [dbUser, setDbUser] = useState<DBUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchDBUser = async () => {
+    if (!currentUser) return;
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch('http://localhost:8000/users/sync', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data: DBUser = await response.json();
+        setDbUser(data);
+      } else {
+        console.error('Failed to sync user', await response.text());
+        setDbUser(null);
+      }
+    } catch (err) {
+      console.error('Error syncing user:', err);
+      setDbUser(null);
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       setLoading(false);
     });
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchDBUser();
+    } else {
+      setDbUser(null);
+    }
+  }, [currentUser]);
 
   const loginWithGoogle = async () => {
     try {
@@ -56,9 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     currentUser,
+    dbUser,
     loading,
     loginWithGoogle,
-    logout
+    logout,
+    fetchDBUser
   };
 
   return (
