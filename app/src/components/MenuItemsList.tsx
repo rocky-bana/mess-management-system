@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardContent, Chip, Grid, CircularProgress, Alert } from '@mui/material';
+import { API_BASE_URL } from '../utils/api';
 
 export interface MenuItem {
   item_id: number;
@@ -15,7 +16,7 @@ export function MenuItemsList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:8000/menu-items/')
+    fetch(`${API_BASE_URL}/menu-items/`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -47,7 +48,7 @@ export function MenuItemsList() {
       ) : (
         <Grid container spacing={3}>
           {items.map((item) => (
-            <Grid item xs={12} sm={6} md={4} key={item.item_id}>
+            <Grid key={item.item_id} size={{ xs: 12, sm: 6, md: 4 }}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { boxShadow: 6 } }}>
                 <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                   <Typography variant="h6" component="h3" gutterBottom fontWeight="bold">

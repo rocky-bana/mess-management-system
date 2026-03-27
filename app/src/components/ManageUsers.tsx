@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../utils/api';
 import type { DBUser, Role } from '../types/user';
 
 export const ManageUsers: React.FC = () => {
@@ -31,7 +32,7 @@ export const ManageUsers: React.FC = () => {
     if (!currentUser) return;
     try {
       const token = await currentUser.getIdToken();
-      const response = await fetch('http://localhost:8000/users/', {
+      const response = await fetch(`${API_BASE_URL}/users/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -57,7 +58,7 @@ export const ManageUsers: React.FC = () => {
     if (!currentUser) return;
     try {
       const token = await currentUser.getIdToken();
-      const response = await fetch(`http://localhost:8000/users/${userId}/role`, {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/role`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -79,7 +80,7 @@ export const ManageUsers: React.FC = () => {
     if (!currentUser || !window.confirm('Are you sure you want to delete this user? This will also remove them from Firebase Authentication.')) return;
     try {
       const token = await currentUser.getIdToken();
-      const response = await fetch(`http://localhost:8000/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

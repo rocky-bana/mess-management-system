@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardContent, TextField, Button, Grid, CircularProgress, Alert, Rating } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../utils/api';
 
 interface Feedback {
   feedback_id: number;
@@ -24,7 +25,7 @@ export function FeedbackWall() {
     setLoading(true);
     try {
       const token = await currentUser.getIdToken();
-      const response = await fetch('http://localhost:8000/feedback/', {
+      const response = await fetch(`${API_BASE_URL}/feedback/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -51,7 +52,7 @@ export function FeedbackWall() {
 
     try {
       const token = await currentUser.getIdToken();
-      const response = await fetch('http://localhost:8000/feedback/', {
+      const response = await fetch(`${API_BASE_URL}/feedback/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

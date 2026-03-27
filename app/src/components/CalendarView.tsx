@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../utils/api';
 import type { MenuItem } from './MenuItemsList';
 import { 
   Box, Typography, Card, CardContent, CircularProgress, Alert, Button, 
@@ -46,7 +47,7 @@ export function CalendarView() {
 
   const fetchCalendar = () => {
     setLoading(true);
-    fetch('http://localhost:8000/calendar/')
+    fetch(`${API_BASE_URL}/calendar/`)
       .then(response => {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
@@ -64,7 +65,7 @@ export function CalendarView() {
   };
 
   const fetchMenuItems = () => {
-    fetch('http://localhost:8000/menu-items/')
+    fetch(`${API_BASE_URL}/menu-items/`)
       .then(r => r.json())
       .then(data => {
         setMenuItems(data);
@@ -81,7 +82,7 @@ export function CalendarView() {
   const handleDelete = (menuId: number) => {
     if (!confirm('Are you sure you want to remove this meal from the schedule?')) return;
     
-    fetch(`http://localhost:8000/daily-menu/${menuId}`, {
+    fetch(`${API_BASE_URL}/daily-menu/${menuId}`, {
       method: 'DELETE',
     })
     .then(response => {
@@ -101,7 +102,7 @@ export function CalendarView() {
     setAddLoading(true);
     
     const addPromises = addMenuItemIds.map(itemId => {
-      return fetch('http://localhost:8000/daily-menu/', {
+      return fetch(`${API_BASE_URL}/daily-menu/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

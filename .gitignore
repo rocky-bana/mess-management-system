@@ -72,3 +72,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+

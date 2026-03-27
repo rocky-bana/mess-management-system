@@ -10,6 +10,7 @@ import {
   Alert
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE_URL } from '../utils/api';
 
 interface ProfileDialogProps {
   open: boolean;
@@ -33,7 +34,7 @@ export const ProfileDialog: React.FC<ProfileDialogProps> = ({ open, onClose }) =
 
     try {
       const token = await currentUser.getIdToken();
-      const response = await fetch('http://localhost:8000/users/me', {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
