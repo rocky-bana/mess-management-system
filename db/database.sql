@@ -1,4 +1,4 @@
--- Active: 1773557885374@@127.0.0.1@5432@messdb
+-- Active: 1779730270995@@127.0.0.1@5432@postgres
 -- Create an enum type for meal types
 DROP TYPE IF EXISTS meal_type CASCADE;
 
@@ -137,16 +137,18 @@ VALUES ('Monday', 'Breakfast', 1), -- Aloo Paratha
     ('Monday', 'Dinner', 9);
 -- Gulab Jamun
 
-
 -- Table to store user feedback
 CREATE TABLE IF NOT EXISTS feedback (
     feedback_id SERIAL PRIMARY KEY,
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5) NOT NULL,
+    rating INTEGER CHECK (
+        rating >= 1
+        AND rating <= 5
+    ) NOT NULL,
     comment TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Note: In a real system you'd probably link feedback to `user_id` or a specific `menu_id`. 
+-- Note: In a real system you'd probably link feedback to `user_id` or a specific `menu_id`.
 
 -- Create an enum type for user roles
 DROP TYPE IF EXISTS role_enum CASCADE;
