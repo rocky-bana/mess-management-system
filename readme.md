@@ -10,7 +10,7 @@
     scoop bucket add extras
     scoop install extras/vscode
     scoop install extras/antigravity
-    scoop install main/python
+    scoop install versions/python314
     scoop install versions/nodejs24
     scoop install main/terraform
     scoop install main/tflint
