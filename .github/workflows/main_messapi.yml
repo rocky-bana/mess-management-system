@@ -1,9 +1,9 @@
 name: Deploy api
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
@@ -76,7 +76,6 @@ jobs:
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
-        working-directory: ./api
         with:
           app-name: 'messapi'
           slot-name: 'Production'
