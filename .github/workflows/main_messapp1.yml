@@ -24,6 +24,12 @@ jobs:
         with:
           node-version: '24.x'
 
+      - name: Create .env file
+        env:
+          APP_ENV: ${{ secrets.APP_ENV }}
+        run: |
+          echo "$APP_ENV" > .env
+
       - name: npm install, build, and test
         run: |
           npm install
