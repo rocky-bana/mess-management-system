@@ -53,3 +53,4 @@ jobs:
           app-name: 'messapp1'
           slot-name: 'Production'
           package: ./app
+          clean: true
