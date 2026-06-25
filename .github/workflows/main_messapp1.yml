@@ -54,3 +54,4 @@ jobs:
           slot-name: 'Production'
           package: ./app/dist
           clean: true
+          startup-command: 'pm2 serve /home/site/wwwroot 8080 --spa --no-daemon'
