@@ -46,7 +46,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'calendar' | 'menu' | 'feedback' | 'manage-users'>('calendar');
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: 'calendar' | 'menu' | 'feedback' | 'manage-users') => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: 'calendar' | 'menu' | 'feedback' | 'manage-users') => {
     setActiveTab(newValue);
   };
 
