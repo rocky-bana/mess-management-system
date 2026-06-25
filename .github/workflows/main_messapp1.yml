@@ -52,5 +52,5 @@ jobs:
         with:
           app-name: 'messapp1'
           slot-name: 'Production'
-          package: ./app
+          package: ./app/dist
           clean: true
