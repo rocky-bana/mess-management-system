@@ -65,18 +65,12 @@ Run the api
  make .env file (if does not exist)
  all these values are required :
 
-     VITE_FIREBASE_API_KEY=
-    
+    VITE_FIREBASE_API_KEY=
     VITE_FIREBASE_AUTH_DOMAIN=
-    
     VITE_FIREBASE_PROJECT_ID=
-    
     VITE_FIREBASE_STORAGE_BUCKET=
-    
     VITE_FIREBASE_MESSAGING_SENDER_ID=
-    
     VITE_FIREBASE_APP_ID=
-    
     VITE_API_BASE_URL='http://localhost:8000';
      
 
