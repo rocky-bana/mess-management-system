@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE_URL } from '../utils/api';
+import { authFetch } from '../utils/api';
 import type { MenuItem } from './MenuItemsList';
 import { 
   Box, Typography, Card, CardContent, CircularProgress, Alert, Button, 
@@ -29,7 +29,9 @@ interface CalendarDay {
 }
 
 export function CalendarView() {
-  const { dbUser } = useAuth();
+  const { dbUser, currentUser } = useAuth();
+  const canManage = dbUser?.role === 'contributer' || dbUser?.role === 'admin';
+
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function CalendarView() {
 
   const fetchCalendar = () => {
     setLoading(true);
-    fetch(`${API_BASE_URL}/calendar/`)
+    authFetch('/calendar/')
       .then(response => {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
@@ -65,7 +67,7 @@ export function CalendarView() {
   };
 
   const fetchMenuItems = () => {
-    fetch(`${API_BASE_URL}/menu-items/`)
+    authFetch('/menu-items/')
       .then(r => r.json())
       .then(data => {
         setMenuItems(data);
@@ -79,56 +81,62 @@ export function CalendarView() {
     fetchMenuItems();
   }, []);
 
-  const handleDelete = (menuId: number) => {
+  const handleDelete = async (menuId: number) => {
     if (!confirm('Are you sure you want to remove this meal from the schedule?')) return;
+    if (!currentUser) return alert('You must be logged in to remove a meal.');
     
-    fetch(`${API_BASE_URL}/daily-menu/${menuId}`, {
-      method: 'DELETE',
-    })
-    .then(response => {
+    try {
+      const response = await authFetch(`/daily-menu/${menuId}`, {
+        method: 'DELETE',
+      });
       if (response.ok) {
         fetchCalendar(); // Refresh calendar after deletion
       } else {
-        alert('Failed to delete meal');
+        const err = await response.json().catch(() => ({ detail: "Failed to delete meal" }));
+        alert(`Failed to delete meal: ${err.detail || response.statusText}`);
       }
-    })
-    .catch(e => console.error(e));
+    } catch (e) {
+      console.error(e);
+      alert('Error deleting meal from schedule');
+    }
   };
 
-  const handleAddMeal = (e: React.FormEvent) => {
+  const handleAddMeal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (addMenuItemIds.length === 0) return alert('Please select at least one menu item');
+    if (!currentUser) return alert('You must be logged in to schedule meals.');
     
     setAddLoading(true);
-    
-    const addPromises = addMenuItemIds.map(itemId => {
-      return fetch(`${API_BASE_URL}/daily-menu/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          day: addDay,
-          meal_type: addMealType,
-          item_id: parseInt(itemId)
-        })
+    try {
+      const addPromises = addMenuItemIds.map(itemId => {
+        return authFetch('/daily-menu/', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            day: addDay,
+            meal_type: addMealType,
+            item_id: parseInt(itemId)
+          })
+        });
       });
-    });
 
-    Promise.all(addPromises)
-      .then(async (responses) => {
-        const failedResponse = responses.find(r => !r.ok);
-        if (!failedResponse) {
-          setShowAddForm(false);
-          fetchCalendar();
-        } else {
-          const err = await failedResponse.json().catch(() => ({ detail: "Unknown error" }));
-          alert(`Failed to add some meals: ${err.detail}`);
-        }
-      })
-      .catch(e => {
-        console.error(e);
-        alert('Error adding meal to schedule');
-      })
-      .finally(() => setAddLoading(false));
+      const responses = await Promise.all(addPromises);
+      const failedResponse = responses.find(r => !r.ok);
+      if (!failedResponse) {
+        setShowAddForm(false);
+        fetchCalendar();
+      } else {
+        const err = await failedResponse.json().catch(() => ({ detail: "Unknown error" }));
+        alert(`Failed to add meal(s): ${err.detail || failedResponse.statusText}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error adding meal to schedule');
+    } finally {
+      setAddLoading(false);
+    }
   };
 
   if (loading && days.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
@@ -137,7 +145,7 @@ export function CalendarView() {
   // Find the selected day's data from our backend array
   const formattedSelectedDate = selectedDate.format('YYYY-MM-DD');
   const selectedDayData = days.find(d => d.date.startsWith(formattedSelectedDate));
-  
+
   const displayDayName = selectedDate.format('dddd');
   const displayFormattedDate = selectedDate.format('MMM D, YYYY');
 
@@ -148,7 +156,7 @@ export function CalendarView() {
           <Typography variant="h4" fontWeight="bold">Menu Calendar</Typography>
           <Typography color="text.secondary">Select a date to view the scheduled meals</Typography>
         </Box>
-        {dbUser?.role === 'contributer' && (
+        {canManage && (
           <Button 
             variant={showAddForm ? "outlined" : "contained"} 
             color={showAddForm ? "error" : "primary"}
@@ -296,7 +304,7 @@ export function CalendarView() {
                                         )}
                                       </Box>
 
-                                      {dbUser?.role === 'contributer' && (
+                                      {canManage && (
                                         <IconButton 
                                           className="delete-btn"
                                           size="small" 

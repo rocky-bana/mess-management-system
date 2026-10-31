@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardContent, TextField, Button, Grid, CircularProgress, Alert, Rating } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE_URL } from '../utils/api';
+import { authFetch } from '../utils/api';
 
 interface Feedback {
   feedback_id: number;
@@ -11,7 +11,7 @@ interface Feedback {
 }
 
 export function FeedbackWall() {
-  const { currentUser, dbUser } = useAuth();
+  const { currentUser } = useAuth();
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,12 +24,7 @@ export function FeedbackWall() {
     if (!currentUser) return;
     setLoading(true);
     try {
-      const token = await currentUser.getIdToken();
-      const response = await fetch(`${API_BASE_URL}/feedback/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await authFetch('/feedback/');
       if (!response.ok) throw new Error("Failed to load feedback");
       const data = await response.json();
       setFeedbacks(data);
@@ -51,12 +46,10 @@ export function FeedbackWall() {
     setSubmitting(true);
 
     try {
-      const token = await currentUser.getIdToken();
-      const response = await fetch(`${API_BASE_URL}/feedback/`, {
+      const response = await authFetch('/feedback/', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ rating: rating || 5, comment: comment.trim() || null })
       });
@@ -81,7 +74,7 @@ export function FeedbackWall() {
       </Box>
 
       <Grid container spacing={4}>
-        {dbUser?.role === 'reader' && (
+        {currentUser && (
           <Grid size={{ xs: 12, md: 4 }}>
             <Card elevation={2} sx={{ position: 'sticky', top: 24 }}>
               <CardContent sx={{ p: 3 }}>
@@ -124,7 +117,7 @@ export function FeedbackWall() {
           </Grid>
         )}
 
-        <Grid size={{ xs: 12, md: dbUser?.role === 'reader' ? 8 : 12 }}>
+        <Grid size={{ xs: 12, md: currentUser ? 8 : 12 }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
           {feedbacks.length === 0 && !loading && !error && (

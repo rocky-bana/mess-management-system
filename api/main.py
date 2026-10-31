@@ -26,6 +26,16 @@ app.add_middleware(
 )
 
 
+@app.get("/", tags=["Health"])
+def root():
+    return {
+        "status": "online",
+        "message": "Mess Management System API is running",
+        "docs": "/docs",
+        "redoc": "/redoc",
+    }
+
+
 # --- Menu Items CRUD ---
 
 @app.post("/menu-items/", response_model=schemas.MenuItem, tags=["Menu Items"])
@@ -74,8 +84,8 @@ def delete_menu_item(item_id: int, db: Session = Depends(get_db)):
 
 @app.post("/daily-menu/", response_model=schemas.DailyMenu, tags=["Daily Menu"])
 def create_daily_menu(menu: schemas.DailyMenuCreate, db: Session = Depends(get_db), current_db_user: models.User = Depends(get_current_db_user)):
-    if current_db_user.role != models.RoleEnum.contributer:
-        raise HTTPException(status_code=403, detail="Only contributors can manage the schedule")
+    if current_db_user.role not in [models.RoleEnum.contributer, models.RoleEnum.admin]:
+        raise HTTPException(status_code=403, detail="Only contributors and admins can manage the schedule")
     # Verify the item exists first
     db_item = db.query(models.MenuItem).filter(models.MenuItem.item_id == menu.item_id).first()
     if not db_item:
@@ -112,8 +122,8 @@ def read_daily_menus_by_day(day: schemas.DayOfWeek, meal_type: schemas.MealType 
 
 @app.delete("/daily-menu/{menu_id}", status_code=204, tags=["Daily Menu"])
 def delete_daily_menu(menu_id: int, db: Session = Depends(get_db), current_db_user: models.User = Depends(get_current_db_user)):
-    if current_db_user.role != models.RoleEnum.contributer:
-        raise HTTPException(status_code=403, detail="Only contributors can manage the schedule")
+    if current_db_user.role not in [models.RoleEnum.contributer, models.RoleEnum.admin]:
+        raise HTTPException(status_code=403, detail="Only contributors and admins can manage the schedule")
     db_menu = db.query(models.DailyMenu).filter(models.DailyMenu.menu_id == menu_id).first()
     if db_menu is None:
         raise HTTPException(status_code=404, detail="Daily Menu entry not found")
@@ -157,8 +167,7 @@ def get_monthly_calendar(db: Session = Depends(get_db)):
 
 @app.post("/feedback/", response_model=schemas.Feedback, tags=["Feedback"])
 def create_feedback(feedback: schemas.FeedbackCreate, db: Session = Depends(get_db), current_db_user: models.User = Depends(get_current_db_user)):
-    if current_db_user.role != models.RoleEnum.reader:
-        raise HTTPException(status_code=403, detail="Only readers can submit feedback")
+    # Any authenticated user can submit feedback
     db_feedback = models.Feedback(**feedback.model_dump())
     db.add(db_feedback)
     db.commit()

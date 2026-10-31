@@ -6,7 +6,7 @@ import {
   signOut
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
-import { API_BASE_URL } from '../utils/api';
+import { authFetch } from '../utils/api';
 import type { DBUser } from '../types/user';
 
 interface AuthContextType {
@@ -36,12 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchDBUser = async () => {
     if (!currentUser) return;
     try {
-      const token = await currentUser.getIdToken();
-      const response = await fetch(`${API_BASE_URL}/users/sync`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await authFetch('/users/sync', {
+        method: 'POST'
       });
       if (response.ok) {
         const data: DBUser = await response.json();

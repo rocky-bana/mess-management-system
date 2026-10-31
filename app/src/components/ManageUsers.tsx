@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useAuth } from '../contexts/AuthContext';
-import { API_BASE_URL } from '../utils/api';
+import { authFetch } from '../utils/api';
 import type { DBUser, Role } from '../types/user';
 
 export const ManageUsers: React.FC = () => {
@@ -31,12 +31,7 @@ export const ManageUsers: React.FC = () => {
   const fetchUsers = async () => {
     if (!currentUser) return;
     try {
-      const token = await currentUser.getIdToken();
-      const response = await fetch(`${API_BASE_URL}/users/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await authFetch('/users/');
       if (!response.ok) {
         throw new Error('Failed to fetch users. Ensure you have admin permissions.');
       }
@@ -57,11 +52,9 @@ export const ManageUsers: React.FC = () => {
   const handleRoleChange = async (userId: number, newRole: Role) => {
     if (!currentUser) return;
     try {
-      const token = await currentUser.getIdToken();
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/role`, {
+      const response = await authFetch(`/users/${userId}/role`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ role: newRole })
@@ -79,12 +72,8 @@ export const ManageUsers: React.FC = () => {
   const handleDeleteUser = async (userId: number) => {
     if (!currentUser || !window.confirm('Are you sure you want to delete this user? This will also remove them from Firebase Authentication.')) return;
     try {
-      const token = await currentUser.getIdToken();
-      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await authFetch(`/users/${userId}`, {
+        method: 'DELETE'
       });
       if (!response.ok) {
         throw new Error('Failed to delete user');

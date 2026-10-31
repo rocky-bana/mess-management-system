@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardContent, Chip, Grid, CircularProgress, Alert } from '@mui/material';
-import { API_BASE_URL } from '../utils/api';
+import { authFetch } from '../utils/api';
 
 export interface MenuItem {
   item_id: number;
@@ -16,7 +16,7 @@ export function MenuItemsList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/menu-items/`)
+    authFetch('/menu-items/')
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
