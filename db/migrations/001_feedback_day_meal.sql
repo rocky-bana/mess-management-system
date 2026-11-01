@@ -1,3 +1,4 @@
+-- Active: 1793532734774@@ep-dawn-band-asx02q3r.c-4.eu-central-1.aws.neon.tech@5432@neondb
 -- Adds the user link, meal date and meal type to feedback for existing databases.
 -- Safe to run more than once.
 
