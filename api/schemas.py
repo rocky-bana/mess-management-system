@@ -1,7 +1,7 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from enum import Enum
 from typing import Optional, List
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 
 class RoleEnum(str, Enum):
     admin = 'admin'
@@ -73,15 +73,37 @@ class CalendarDay(BaseModel):
 
 # --- Feedback ---
 
+FEEDBACK_LOOKBACK_DAYS = 13
+
+def today_ist() -> date:
+    """Today's date in India Standard Time (UTC+05:30)."""
+    return datetime.now(timezone(timedelta(hours=5, minutes=30))).date()
+
 class FeedbackBase(BaseModel):
     rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5")
     comment: Optional[str] = None
+    meal_date: date
+    meal_type: Optional[MealType] = None
 
 class FeedbackCreate(FeedbackBase):
-    pass
+    @field_validator("meal_date")
+    @classmethod
+    def check_meal_date_window(cls, value: date) -> date:
+        today = today_ist()
+        if value > today:
+            raise ValueError("Feedback cannot be given for a future date")
+        if value < today - timedelta(days=FEEDBACK_LOOKBACK_DAYS):
+            raise ValueError("Feedback can only be given for the last 2 weeks")
+        return value
+
+class FeedbackUpdate(BaseModel):
+    rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5")
+    comment: Optional[str] = None
 
 class Feedback(FeedbackBase):
     feedback_id: int
+    user_id: Optional[int] = None
+    user_name: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

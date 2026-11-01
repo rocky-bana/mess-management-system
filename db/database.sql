@@ -137,19 +137,6 @@ VALUES ('Monday', 'Breakfast', 1), -- Aloo Paratha
     ('Monday', 'Dinner', 9);
 -- Gulab Jamun
 
--- Table to store user feedback
-CREATE TABLE IF NOT EXISTS feedback (
-    feedback_id SERIAL PRIMARY KEY,
-    rating INTEGER CHECK (
-        rating >= 1
-        AND rating <= 5
-    ) NOT NULL,
-    comment TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Note: In a real system you'd probably link feedback to `user_id` or a specific `menu_id`.
-
 -- Create an enum type for user roles
 DROP TYPE IF EXISTS role_enum CASCADE;
 
@@ -164,3 +151,25 @@ CREATE TABLE IF NOT EXISTS users (
     role role_enum NOT NULL DEFAULT 'reader',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Table to store user feedback, tied to the user and to the meal it is about (NULL meal_type = whole day)
+CREATE TABLE IF NOT EXISTS feedback (
+    feedback_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users (user_id) ON DELETE SET NULL,
+    rating INTEGER CHECK (
+        rating >= 1
+        AND rating <= 5
+    ) NOT NULL,
+    comment TEXT,
+    meal_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    meal_type meal_type,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- One feedback per user per meal slot. A NULL meal_type (whole day) is its own slot.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_feedback_user_meal ON feedback (user_id, meal_date, meal_type) WHERE meal_type IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_feedback_user_whole_day ON feedback (user_id, meal_date) WHERE meal_type IS NULL;
+
+-- Index to quickly look up feedback for a specific day and meal
+CREATE INDEX IF NOT EXISTS idx_feedback_day_meal ON feedback (meal_date, meal_type);

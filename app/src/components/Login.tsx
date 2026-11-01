@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { Box, Card, CardContent, Typography, Button, Container } from '@mui/material';
+import { Box, Card, CardContent, Typography, Button, Container, Alert } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Login: React.FC = () => {
   const { loginWithGoogle } = useAuth();
   const [error, setError] = useState('');
+  const [signingIn, setSigningIn] = useState(false);
 
   const handleLogin = async () => {
+    setSigningIn(true);
     try {
       setError('');
       await loginWithGoogle();
     } catch (err) {
       setError('Failed to log in with Google.');
       console.error(err);
+    } finally {
+      setSigningIn(false);
     }
   };
 
@@ -40,9 +44,9 @@ export const Login: React.FC = () => {
             </Typography>
             
             {error && (
-              <Typography color="error" variant="body2" sx={{ mb: 3 }}>
+              <Alert severity="error" sx={{ mb: 3, width: '100%' }}>
                 {error}
-              </Typography>
+              </Alert>
             )}
 
             <Button
@@ -51,11 +55,12 @@ export const Login: React.FC = () => {
               size="large"
               startIcon={<GoogleIcon />}
               onClick={handleLogin}
+              disabled={signingIn}
               fullWidth
               sx={{ py: 1.5, fontSize: '1.1rem', borderRadius: 2 }}
               disableElevation
             >
-              Sign in with Google
+              {signingIn ? 'Signing in...' : 'Sign in with Google'}
             </Button>
           </CardContent>
         </Card>

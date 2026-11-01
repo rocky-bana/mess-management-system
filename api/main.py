@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from datetime import date, timedelta
 
@@ -167,16 +168,58 @@ def get_monthly_calendar(db: Session = Depends(get_db)):
 
 @app.post("/feedback/", response_model=schemas.Feedback, tags=["Feedback"])
 def create_feedback(feedback: schemas.FeedbackCreate, db: Session = Depends(get_db), current_db_user: models.User = Depends(get_current_db_user)):
-    # Any authenticated user can submit feedback
-    db_feedback = models.Feedback(**feedback.model_dump())
+    # Any authenticated user can submit feedback, once per meal slot per day
+    meal_filter = models.Feedback.meal_type.is_(None) if feedback.meal_type is None else models.Feedback.meal_type == feedback.meal_type
+    existing_feedback = db.query(models.Feedback).filter(
+        models.Feedback.user_id == current_db_user.user_id,
+        models.Feedback.meal_date == feedback.meal_date,
+        meal_filter
+    ).first()
+    if existing_feedback:
+        raise HTTPException(status_code=409, detail="You have already given feedback for this day/meal")
+
+    db_feedback = models.Feedback(**feedback.model_dump(), user_id=current_db_user.user_id)
     db.add(db_feedback)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="You have already given feedback for this day/meal")
     db.refresh(db_feedback)
     return db_feedback
 
 @app.get("/feedback/", response_model=List[schemas.Feedback], tags=["Feedback"])
-def read_feedback(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_db_user: models.User = Depends(get_current_db_user)):
-    return db.query(models.Feedback).order_by(models.Feedback.created_at.desc()).offset(skip).limit(limit).all()
+def read_feedback(skip: int = 0, limit: int = 100, meal_date: date = None, meal_type: schemas.MealType = None, whole_day: bool = False, mine: bool = False, db: Session = Depends(get_db), current_db_user: models.User = Depends(get_current_db_user)):
+    query = db.query(models.Feedback).options(joinedload(models.Feedback.user))
+    if meal_date:
+        query = query.filter(models.Feedback.meal_date == meal_date)
+    if meal_type:
+        query = query.filter(models.Feedback.meal_type == meal_type)
+    if whole_day:
+        query = query.filter(models.Feedback.meal_type.is_(None))
+    if mine:
+        query = query.filter(models.Feedback.user_id == current_db_user.user_id)
+    return query.order_by(models.Feedback.meal_date.desc(), models.Feedback.created_at.desc()).offset(skip).limit(limit).all()
+
+@app.put("/feedback/{feedback_id}", response_model=schemas.Feedback, tags=["Feedback"])
+def update_feedback(feedback_id: int, feedback_update: schemas.FeedbackUpdate, db: Session = Depends(get_db), current_db_user: models.User = Depends(get_current_db_user)):
+    """
+    Updates the rating and comment of the current user's own feedback. The meal slot cannot change.
+    """
+    db_feedback = db.query(models.Feedback).options(joinedload(models.Feedback.user)).filter(models.Feedback.feedback_id == feedback_id).first()
+    if db_feedback is None:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    if db_feedback.user_id != current_db_user.user_id:
+        raise HTTPException(status_code=403, detail="You can only edit your own feedback")
+    today = schemas.today_ist()
+    if not today - timedelta(days=schemas.FEEDBACK_LOOKBACK_DAYS) <= db_feedback.meal_date <= today:
+        raise HTTPException(status_code=400, detail="Feedback can only be edited within the last 2 weeks")
+
+    db_feedback.rating = feedback_update.rating
+    db_feedback.comment = feedback_update.comment
+    db.commit()
+    db.refresh(db_feedback)
+    return db_feedback
 
 # --- Users API ---
 

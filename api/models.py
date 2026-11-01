@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, Enum as SQLAlchemyEnum, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, Text, Date, Enum as SQLAlchemyEnum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -54,9 +54,18 @@ class Feedback(Base):
     __tablename__ = "feedback"
 
     feedback_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
     rating = Column(Integer, nullable=False)
     comment = Column(Text, nullable=True)
+    meal_date = Column(Date, nullable=False)
+    meal_type = Column(SQLAlchemyEnum(schemas.MealType, name="meal_type", create_type=False), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+    @property
+    def user_name(self):
+        return self.user.name if self.user else None
 
 class User(Base):
     __tablename__ = "users"

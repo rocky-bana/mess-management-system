@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -23,6 +23,28 @@ export const ProfileDialog: React.FC<ProfileDialogProps> = ({ open, onClose }) =
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset the name whenever the dialog opens or the stored user changes
+  useEffect(() => {
+    if (!open) return;
+    setName(dbUser?.name || '');
+  }, [open, dbUser]);
+
+  // Clear messages each time the dialog opens
+  useEffect(() => {
+    if (!open) return;
+    setError(null);
+    setSuccess(false);
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
+
+  const trimmedName = name.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +60,7 @@ export const ProfileDialog: React.FC<ProfileDialogProps> = ({ open, onClose }) =
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name })
+        body: JSON.stringify({ name: trimmedName })
       });
 
       if (!response.ok) {
@@ -47,7 +69,7 @@ export const ProfileDialog: React.FC<ProfileDialogProps> = ({ open, onClose }) =
 
       await fetchDBUser();
       setSuccess(true);
-      setTimeout(() => {
+      closeTimer.current = setTimeout(() => {
         onClose();
         setSuccess(false);
       }, 1500);
@@ -90,7 +112,7 @@ export const ProfileDialog: React.FC<ProfileDialogProps> = ({ open, onClose }) =
           <Button 
             type="submit" 
             variant="contained" 
-            disabled={loading || name === dbUser?.name}
+            disabled={loading || trimmedName === dbUser?.name}
           >
             {loading ? 'Saving...' : 'Save Changes'}
           </Button>
